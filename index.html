@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="calculator">
+    <form id="calculator__form">
+        <div id="calculator__main-options">
+            <div class="calculator__curr calculator__main-text">
+                <label> <div class="calculator__text uppercase">валюта</div>
+                    <select name="currency" id="calculator__currency">
+                        <option value="RUB">Рубль РФ</option>
+                        <option value="USD">Доллар США</option>
+                        <option value="EUR">Евро</option>
+                    </select>
+                </label>
+            </div>
+            <div class="calculator__main-text calculator__margin-none">
+                <label>
+                    <div class="calculator__text uppercase">сумма вклада</div>
+                </label>
+                <input type="number" id="calculator__amount" name="amount" min="50000" max="30000000" value="50000">
+            </div>
+            <div  class="calculator__main-text">
+                <label>
+                    <div class="calculator__text uppercase">на срок <span class="changeDuration">3 месяца</span></div>
+                </label>
+                <input type="range" name="duration" min="3" max="24" step="1" value="3" id="calculator__duration" value="3">
+            </div>
+        </div>
+        <div id="calculator__additional-options">
+            <div class="calculator_addit-opt">
+                <input type="checkbox" name="increased-rate" id="calculator__increased-rate" class="checkbox">
+                <label  for ="calculator__increased-rate" title="Доход будет выше, но вклад можно пополнить только в течение 30 дней с даты открытия (первичного пополнения)">
+                    Повысить ставку по вкладу
+                </label>
+
+            </div>
+            <div class="calculator_addit-opt">
+                <input type="checkbox" name="capitalization" id="calculator__capitalization" class="checkbox">
+                <label for="calculator__capitalization"  title="При выплате процентов на вклад повышается его доходность">
+                    Оставлять проценты на вкладе
+                </label>
+            </div>
+            <div class="calculator_addit-opt">
+                <input type="checkbox" name="bonus" id="calculator__bonus" class="checkbox">
+                <label for="calculator__bonus" title="Мы компенсируем вам 0,5% от суммы банковского перевода денежных средств на счет вклада. Компенсация не выплачивается при пополнении вклада менее чем за 85 дней до окончания срока вклада.">
+                    Бонус от банка
+                </label>
+            </div>
+        </div>
+    </form>
+
+    <div id="calculator__result">
+        <div class="calculator__main-text">
+            <label><div class="uppercase calculator__margin-big">за <span class="changeDuration uppercase">3 месяца</span> я накоплю <div id="calculator__result-money"></div></label>
+        </div>
+        <div class="calculator__main-text calculator__margin-none">
+            <label><div class="uppercase">ставка</div> <span id="calculator__result-percent"></span></label>
+        </div>
+    </div>
+    <button>Открыть вклад</button>
+    <div class="clearfix"></div>
+</div>
+<script src="calculate.js"></script>
+<script>
+    var form = document.getElementById("calculator__form");
+
+
+
+    var runCalculation = function(){
+        //собрать данные формы в объект data
+        var formData = new FormData(form);
+        var data = {
+            amount: parseInt(formData.get("amount")),
+            currency: formData.get("currency"),
+            duration: parseInt(formData.get("duration")),
+            increasedRate: formData.get("increased-rate")=="on",
+            capitalization: formData.get("capitalization")=="on",
+            bonus: formData.get("bonus")=="on"
+        };
+        var result = calculate(data);
+
+        //обновить результаты данными из объекта result
+        document.getElementById("calculator__result-money").innerHTML = numberWithSpaces(result.money);
+        document.getElementById("calculator__result-percent").innerHTML = Math.round(result.percent*1000)/10 + "%";
+        return false
+    };
+
+    runCalculation();
+
+    form.onsubmit = runCalculation;
+    form.addEventListener("change", function(){
+        form.dispatchEvent(new Event('submit'));
+    });
+
+
+    var amountInput = document.getElementById("calculator__amount");
+    amountInput.addEventListener("change", function(){
+
+        if (parseInt(amountInput.value) < amountInput.min) {
+            amountInput.value = amountInput.min
+        }
+        if (parseInt(amountInput.value) > amountInput.max) {
+            amountInput.value = amountInput.max
+        }
+    });
+
+    var durationInput = document.getElementById("calculator__duration");
+    durationInput.addEventListener('input', function() {
+        var d = durationInput.value;
+        var text = d + " " + pluralize(d, "месяц", "месяца", "месяцев");
+        var spans = document.getElementsByClassName("changeDuration");
+        for (var i = 0; i < spans.length; i++) {
+            spans[i].innerHTML = text;
+        }
+    })
+
+    var currencyInput = document.getElementById("calculator__currency");
+    currencyInput.addEventListener('change', function(event){
+        var c = event.target.value;
+        if (c == "RUB") {
+            var min = 50000;
+            var max = 30000000;
+        } else {
+            var min = 1000;
+            var max = 1000000;
+        }
+
+        amountInput.min=min;
+        amountInput.max=max;
+
+        //приводим к числу существующее значение input
+        var v = parseInt(amountInput.value);
+        if (v > max) {
+            amountInput.value = max
+        }
+        if (v < min) {
+            amountInput.value = min
+        }
+    })
+
+    function pluralize(n,one,few,many){
+        var d = parseInt(n.toString().substr(-1));
+        if(n > 10 && n < 20) return many;
+        if(d == 1)           return one;
+        if(d >= 2 && d <= 4) return few;
+        /*otherwise*/        return many;
+    }
+
+    function numberWithSpaces(x) {
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    }
+
+</script>
+</body>
+</html>
